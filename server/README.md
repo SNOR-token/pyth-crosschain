@@ -1,57 +1,60 @@
-## Solend Liquidator Server
+## Solend Liquidator Bot
 
-This package exposes an Express API consumed by the Phantom UI and also runs an optional autonomous liquidator that compounds profits by swapping seized collateral back into the settlement mint (USDC by default). The auto-bot reuses the same Solend + Jupiter pipeline as the `/api/build-liquidation` endpoint so you can dry-run through Phantom before letting it loose.
+This package is now a single Node.js worker that scans Solend obligations, liquidates unhealthy accounts, swaps seized collateral back into the settlement mint with Jupiter, and compounds the proceeds. Everything happens in the console—no HTTP server or UI required.
 
-### Features
+### What it does
 
-- `GET /api/opportunities` — pulls Solend’s liquidation feed, filters by health factor, and returns enriched metadata for the UI.
-- `POST /api/build-liquidation` — constructs a full liquidation transaction (plus optional Jupiter swap) and returns the unsigned base64 blob for Phantom.
-- `POST /api/tx-submitted` — optional callback so the UI can notify the server after it broadcasts a signed tx.
-- `GET /api/bot/state` — exposes cycle counters, realized balances, and the most recent signature from the autonomous bot.
-- Static neon dashboard served from `public/index.html` with Phantom connect, live telemetry, and manual liquidation controls.
-- Autonomous engine (`LiquidatorEngine`) that:
-  - Polls the Solend feed every `POLL_INTERVAL_MS`.
-  - Sizes each liquidation based on the settlement-token balance (compounding).
-  - Uses Jupiter to swap seized collateral back to the settlement mint so capital keeps growing.
+- Polls the Solend liquidation feed (`SOLEND_LIQ_API`) on the cadence set by `POLL_INTERVAL_MS`.
+- Filters opportunities below `HEALTH_THRESHOLD`.
+- Sizes each repay using your wallet’s settlement balance (`UTILIZATION_BPS`, `MIN/MAX_REPAY_LAMPORTS`).
+- Builds Solend liquidation instructions, signs with your keypair, and submits.
+- (Optional) Appends Jupiter swap instructions so collateral is auto-sold back to the settlement mint.
+- Persists cycle counts + balances in `STATE_FILE` so you can resume after restarts.
 
-### Configuration
+### Configure
 
-Copy `.env.example` → `.env` and set the required env vars:
+Copy the example env file and edit it:
 
-```
+```bash
 cp .env.example .env
 ```
 
-Key settings:
+Important variables:
 
 | Variable | Description |
 | --- | --- |
-| `LIQUIDATOR_KEYPAIR` | Base58 or JSON secret key for the server wallet that signs auto-liquidations. |
-| `PRIMARY_SETTLEMENT_MINT` | Token mint used to repay borrows (USDC default). Bot only targets obligations whose repay mint is on the allow-list. |
-| `JUP_*` | Jupiter quote/swap endpoints & slippage. |
-| `AUTO_LIQUIDATE` | Set to `false` if you only want the HTTP API. |
-| `MIN_REPAY_LAMPORTS` / `MAX_REPAY_LAMPORTS` | Bounds for each liquidation notional. |
-| `UTILIZATION_BPS` | Fraction of available balance to deploy per liquidation (default 6000 = 60%). |
+| `LIQUIDATOR_KEYPAIR` | Base58 string or JSON array of the secret key used to sign liquidations. |
+| `PRIMARY_SETTLEMENT_MINT` / `PRIMARY_SETTLEMENT_DECIMALS` | Token you use to repay borrows (USDC by default). |
+| `UTILIZATION_BPS` | Percentage (in basis points) of the wallet balance to deploy per liquidation (e.g., 2000 = 20%). |
+| `MIN_REPAY_LAMPORTS` / `MAX_REPAY_LAMPORTS` | Lower/upper clamps for the repay amount. |
+| `REPAY_ALLOW_LIST` | Comma-separated list of repay mints you are willing to target. |
+| `JUP_*` | Jupiter quote/swap endpoints and slippage controls for the auto-compound step. |
+| `STATE_FILE` | Where the bot stores counters + last signature (defaults to `.liquidator-state.json`). |
 
-### Install & Run
+> 💡 If you are behind a TLS-intercepting proxy, you can temporarily run with `NODE_TLS_REJECT_UNAUTHORIZED=0 node src/bot.js` so Solend/Jupiter calls succeed. Only do this on networks you trust.
+
+### Run
 
 ```bash
-pnpm install          # from repo root (already scoped to workspace)
+pnpm install          # from repo root
 cd server
-pnpm dev              # or pnpm start in production
+pnpm dev              # nodemon + pretty logs
+# or
+pnpm start            # plain node src/bot.js
 ```
 
-The service listens on `PORT` (default 4000). The neon console is available at `http://localhost:4000/`, and the API at `http://localhost:4000/api/...`.
+All output streams to the console. Stop the bot with `Ctrl+C`; it will flush state and exit cleanly.
 
 ### Safety Checklist
 
-- **Start on devnet**: override `RPC_ENDPOINT` + `SOLEND_ENV=devnet` until you trust the stack.
-- **Small utilization**: cap `UTILIZATION_BPS` and `MAX_REPAY_LAMPORTS` so losses are bounded.
-- **Observe Jupiter quotes**: watch the logs to ensure swaps execute at expected prices.
-- **Monitor state**: `curl /api/bot/state` to inspect balances, cycle counts, and last errors.
+- **Start on devnet** (`SOLEND_ENV=devnet`, `RPC_ENDPOINT=https://api.devnet.solana.com`) before risking real capital.
+- **Keep utilization low** until you trust the flow. 10–25% of wallet balance per liquidation is a safe place to start.
+- **Fund the wallet** with the repay mint (e.g., USDC) plus a small amount of SOL for fees.
+- **Watch Jupiter quotes** in the logs—if swaps start failing, disable them by omitting `JUP_*` vars or removing `swapToMint`.
+- **Monitor state file** to see cumulative liquidations, failures, and last signature.
 
 ### Extending
 
-- Plug in your own opportunity selector (e.g., custom heuristics or risk scoring) by feeding data directly into `LiquidatorEngine`.
-- Persist realized PnL to a DB or metrics stack by replacing the `StateStore`.
-- Introduce multi-repay assets by updating `REPAY_ALLOW_LIST` and funding the wallet with the corresponding mints.
+- Swap out `SolendHelper.fetchOpportunities` if you prefer a custom opportunity feed.
+- Replace `StateStore` with a database-backed implementation for deeper analytics.
+- Wire alerting (Telegram, email, etc.) by hooking into the log stream or augmenting `LiquidatorEngine`.

@@ -4,8 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nodemon --watch src --ext js --exec node src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon --watch src --ext js --exec node src/bot.js",
+    "start": "node src/bot.js"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.7",
@@ -14,7 +14,6 @@
     "bignumber.js": "^9.1.2",
     "bs58": "^6.0.0",
     "dotenv": "^16.4.7",
-    "express": "^4.19.2",
     "node-fetch": "^3.3.2",
     "pino": "^9.4.0",
     "pino-pretty": "^11.2.2"
