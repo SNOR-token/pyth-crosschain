@@ -1,0 +1,24 @@
+{
+  "name": "solend-liquidator-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon --watch src --ext js --exec node src/bot.js",
+    "start": "node src/bot.js"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.7",
+    "@solana/web3.js": "^1.95.2",
+    "@solendprotocol/solend-sdk": "^1.1.1",
+    "bignumber.js": "^9.1.2",
+    "bs58": "^6.0.0",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2",
+    "pino": "^9.4.0",
+    "pino-pretty": "^11.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
