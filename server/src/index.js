@@ -3,6 +3,8 @@ import express from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { Connection } from '@solana/web3.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { parseKeypair } from './utils.js';
 import { StateStore } from './stateStore.js';
 import { SolendHelper } from './solend.js';
@@ -37,10 +39,12 @@ const connection = new Connection(RPC_ENDPOINT, 'confirmed');
 const wallet = parseKeypair(LIQUIDATOR_KEYPAIR);
 const stateStore = new StateStore(STATE_FILE);
 const helper = new SolendHelper({ connection, env: SOLEND_ENV, logger });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(express.json());
 app.use(pinoHttp({ logger }));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const router = createLiquidationRouter({
   helper,

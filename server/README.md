@@ -8,6 +8,7 @@ This package exposes an Express API consumed by the Phantom UI and also runs an 
 - `POST /api/build-liquidation` — constructs a full liquidation transaction (plus optional Jupiter swap) and returns the unsigned base64 blob for Phantom.
 - `POST /api/tx-submitted` — optional callback so the UI can notify the server after it broadcasts a signed tx.
 - `GET /api/bot/state` — exposes cycle counters, realized balances, and the most recent signature from the autonomous bot.
+- Static neon dashboard served from `public/index.html` with Phantom connect, live telemetry, and manual liquidation controls.
 - Autonomous engine (`LiquidatorEngine`) that:
   - Polls the Solend feed every `POLL_INTERVAL_MS`.
   - Sizes each liquidation based on the settlement-token balance (compounding).
@@ -40,7 +41,7 @@ cd server
 pnpm dev              # or pnpm start in production
 ```
 
-The service listens on `PORT` (default 4000). Point your front-end fetches at `http://localhost:4000/api/...`.
+The service listens on `PORT` (default 4000). The neon console is available at `http://localhost:4000/`, and the API at `http://localhost:4000/api/...`.
 
 ### Safety Checklist
 

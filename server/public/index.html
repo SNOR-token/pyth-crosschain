@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solend Liquidator — Neon Phantom Console</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+      :root {
+        color-scheme: dark;
+        --bg-dark: #04050c;
+        --bg-panel: rgba(7, 11, 26, 0.88);
+        --bg-card: rgba(13, 18, 38, 0.85);
+        --bg-blur: rgba(3, 8, 18, 0.45);
+        --accent: #38fbd8;
+        --accent-2: #8a5bff;
+        --accent-3: #ff2da8;
+        --muted: #9ea7c7;
+        --success: #53f4a3;
+        --warning: #ffc66b;
+        --danger: #ff5c8d;
+        font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg-dark);
+        color: #edf2ff;
+        overflow-x: hidden;
+      }
+
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -2;
+      }
+
+      /* AI-art inspired neon nebula background (procedural SVG) */
+      body::before {
+        background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQ0MCIgaGVpZ2h0PSI4MDAiIHZpZXdCb3g9IjAgMCAxNDQwIDgwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cmFkaWFsR3JhZGllbnQgaWQ9ImciIGN4PSIwLjUiIGN5PSIwLjQiIHI9IjEuMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojMDQ1M0ZGOyIvPjxzdG9wIG9mZnNldD0iLjMiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMjk5RkYiLz48c3RvcCBvZmZzZXQ9IjAuNjUiIHN0eWxlPSJzdG9wLWNvbG9yOiM4RTNCREYiLz48c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiNGRjI5OUYiLz48L3JhZGlhbEdyYWRpZW50PjwvZGVmcz48cmVjdCBmaWxsPSIjMDIwMzA4IiB3aWR0aD0iMTQ0MCIgaGVpZ2h0PSI4MDAiLz48ZWxsaXBzZSBjeD0iMTAwMCIgY3k9IjIwMCIgcng9IjUwMSIgcnk9IjM2MCIgZmlsbD0idXJsKCNnKSIgZmlsbC1vcGFjaXR5PSIwLjciLz48ZWxsaXBzZSBjeD0iNDIwIiBjeT0iNjIwIiByeD0iMzUwIiByeT0iMjcwIiBmaWxsPSIjRkYzRkFCIiBmaWxsLW9wYWNpdHk9IjAuMjgiLz48ZWxsaXBzZSBjeD0iMjIwIiBjeT0iMjIwIiByeD0iMjAwIiByeT0iMTYwIiBmaWxsPSIjRjYzREQ0IiBmaWxsLW9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==')
+          center/cover no-repeat;
+        filter: brightness(1.05) saturate(1.2);
+        opacity: 0.9;
+      }
+
+      body::after {
+        background: radial-gradient(circle at 20% 20%, rgba(248, 99, 255, 0.35), transparent 55%),
+          radial-gradient(circle at 80% 15%, rgba(57, 209, 255, 0.35), transparent 45%),
+          radial-gradient(circle at 50% 80%, rgba(65, 255, 180, 0.5), transparent 55%);
+        filter: blur(40px);
+        opacity: 0.65;
+      }
+
+      .glass {
+        background: var(--bg-panel);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 20px;
+        backdrop-filter: blur(24px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
+      }
+
+      .page {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 32px 18px 80px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(56, 251, 216, 0.12), rgba(255, 45, 168, 0.2));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        position: relative;
+      }
+
+      .brand-logo::after {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border-radius: 12px;
+        background: conic-gradient(from 140deg, #38fbd8, #ff2da8, #8a5bff, #38fbd8);
+        filter: blur(1px);
+        opacity: 0.45;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 2.6rem);
+        letter-spacing: 0.01em;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      button {
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-weight: 600;
+        min-width: 120px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        color: #05060d;
+        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        box-shadow: 0 7px 18px rgba(56, 251, 216, 0.35);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .grid.stats {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        padding: 16px 18px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stat-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 55%);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+      }
+
+      .stat-value {
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-top: 6px;
+      }
+
+      .stat-subtext {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .panel-title {
+        margin: 0 0 12px;
+        font-size: 1.1rem;
+        letter-spacing: 0.04em;
+      }
+
+      .panel-subtitle {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-bottom: 18px;
+      }
+
+      table {
+        width: 100%;
+        border-spacing: 0;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.95rem;
+      }
+
+      th {
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.78rem;
+      }
+
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .tag {
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .tag-health {
+        background: rgba(255, 92, 141, 0.12);
+        color: var(--danger);
+      }
+
+      .tag-profit {
+        background: rgba(83, 244, 163, 0.1);
+        color: var(--success);
+      }
+
+      .log-area {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        background: rgba(5, 8, 16, 0.86);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 16px;
+        min-height: 200px;
+        overflow-y: auto;
+        max-height: 320px;
+        font-size: 0.88rem;
+      }
+
+      .log-line {
+        margin: 0;
+        padding: 2px 0;
+        color: var(--muted);
+      }
+
+      .log-line strong {
+        color: var(--accent);
+      }
+
+      canvas {
+        width: 100%;
+        height: 260px;
+        display: block;
+      }
+
+      .canvas-wrap {
+        position: relative;
+        padding: 18px;
+      }
+
+      .canvas-wrap::after {
+        content: 'Auto-compound balance';
+        position: absolute;
+        top: 24px;
+        right: 30px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      .hero-img {
+        width: 100%;
+        max-height: 320px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 0 35px rgba(255, 255, 255, 0.05);
+        background: radial-gradient(circle at 30% 20%, rgba(56, 251, 216, 0.25), transparent 45%),
+          radial-gradient(circle at 70% 30%, rgba(255, 45, 168, 0.3), transparent 35%),
+          radial-gradient(circle at 50% 70%, rgba(138, 91, 255, 0.35), transparent 40%),
+          url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2MDAiIHZpZXdCb3g9IjAgMCAxMjAwIDYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIwMCA0MDBDMTExMCAyODUgOTQwIDI3MCA4NDAgMzI1QzcyMCAzODAgNTAwIDYyMCAyOTAgNTUwQzE2MCA1MTAgODAgNDIwIDAgMzIwTDAgNjAwSDEyMDBWMjAwQzEyMDAgMjAwIDEyMDAgNDAwIDEyMDAgNDAwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0NGQkQyIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1vcGFjaXR5PSIwLjI1Ii8+PHBhdGggZD0iTTAgMjAwQzEwMCAxMTAgMzAwIDEwMCA0MDAgMTcwQzUwMCAyNDAgNzAwIDQ4MCA5NDAgNDIwQzEwMDAgNDAwIDExMDAgMzMwIDEyMDAgMzIwIiBzdHJva2U9IiMzOEZCRDgiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIiBzdHJva2Utb3BhY2l0eT0iMC4yOCIvPjwvc3ZnPg==')
+            center/cover;
+        background-blend-mode: screen;
+      }
+
+      .hero-img::after {
+        content: 'AI-simulated nebula stream';
+        display: block;
+        text-align: right;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.35);
+        margin: 6px 8px 0;
+        letter-spacing: 0.15em;
+      }
+
+      @media (max-width: 768px) {
+        .panel {
+          padding: 16px;
+        }
+
+        th,
+        td {
+          font-size: 0.85rem;
+        }
+
+        .actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div class="brand">
+          <div class="brand-logo"></div>
+          <div>
+            <h1>Solend Liquidator</h1>
+            <div style="color: var(--muted); letter-spacing: 0.2em; font-size: 0.78rem">PHANTOM OPS CONSOLE</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="botRefreshBtn" class="btn-secondary">Bot State</button>
+          <button id="connectBtn" class="btn-primary">Connect Phantom</button>
+          <button id="refreshBtn" class="btn-secondary">Refresh</button>
+        </div>
+      </header>
+
+      <div class="hero-img glass"></div>
+
+      <section class="grid stats">
+        <article class="glass stat-card">
+          <div class="stat-label">Wallet</div>
+          <div class="stat-value" id="walletStat">Not connected</div>
+          <div class="stat-subtext">Fee payer & signer</div>
+        </article>
+        <article class="glass stat-card">
+          <div class="stat-label">Bot cycles</div>
+          <div class="stat-value" id="cycleStat">0</div>
+          <div class="stat-subtext" id="cycleSub">idle</div>
+        </article>
+        <article class="glass stat-card">
+          <div class="stat-label">Settled balance</div>
+          <div class="stat-value" id="balanceStat">$0.00</div>
+          <div class="stat-subtext" id="balanceSub">USDC in vault</div>
+        </article>
+        <article class="glass stat-card">
+          <div class="stat-label">Last signature</div>
+          <div class="stat-value" id="sigStat">—</div>
+          <div class="stat-subtext" id="sigSub">Awaiting</div>
+        </article>
+      </section>
+
+      <div class="grid" style="grid-template-columns: minmax(0, 1fr); gap: 24px">
+        <div class="glass panel">
+          <h2 class="panel-title">Auto-compound telemetry</h2>
+          <p class="panel-subtitle">Live settlement balance (USDC) captured after each cycle.</p>
+          <div class="canvas-wrap glass" style="padding: 12px; background: rgba(255, 255, 255, 0.015)">
+            <canvas id="balanceChart" width="800" height="240"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; margin-top: 28px">
+        <div class="glass panel">
+          <h2 class="panel-title">Liquidation opportunities</h2>
+          <p class="panel-subtitle">Pulled from server `/api/opportunities`. Refresh or let auto-update.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Obligation</th>
+                  <th>Borrower</th>
+                  <th>Health</th>
+                  <th>Est. Profit</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="oppsTable">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 28px; color: var(--muted)">Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="glass panel">
+          <h2 class="panel-title">Command log</h2>
+          <p class="panel-subtitle">Server/Phantom flow, swaps, confirmations.</p>
+          <div id="logBox" class="log-area"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { Connection, Transaction } from 'https://esm.sh/@solana/web3.js@1.91.1';
+
+      const RPC = 'https://api.mainnet-beta.solana.com';
+      const connection = new Connection(RPC, 'confirmed');
+      const providerBtn = document.getElementById('connectBtn');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const botRefreshBtn = document.getElementById('botRefreshBtn');
+      const walletStat = document.getElementById('walletStat');
+      const cycleStat = document.getElementById('cycleStat');
+      const cycleSub = document.getElementById('cycleSub');
+      const balanceStat = document.getElementById('balanceStat');
+      const balanceSub = document.getElementById('balanceSub');
+      const sigStat = document.getElementById('sigStat');
+      const sigSub = document.getElementById('sigSub');
+      const oppsTable = document.getElementById('oppsTable');
+      const logBox = document.getElementById('logBox');
+      const chartCanvas = document.getElementById('balanceChart');
+      const chartCtx = chartCanvas.getContext('2d');
+
+      let provider = null;
+      let walletPubkey = null;
+      const chartPoints = [];
+
+      const log = (...args) => {
+        const line = document.createElement('p');
+        line.className = 'log-line';
+        line.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${args.join(' ')}`;
+        logBox.prepend(line);
+        const maxLines = 80;
+        while (logBox.childNodes.length > maxLines) logBox.removeChild(logBox.lastChild);
+      };
+
+      const fmtPubkey = (key) => (!key ? '—' : `${key.slice(0, 4)}…${key.slice(-4)}`);
+      const fmtUsd = (val, digits = 2) => {
+        const num = Number(val || 0);
+        if (!Number.isFinite(num)) return '$0.00';
+        return '$' + num.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+      };
+
+      const updateStats = (state) => {
+        if (!state) return;
+        cycleStat.textContent = state.cycles ?? 0;
+        cycleSub.textContent = `${state.totalLiquidations ?? 0} liquidations · ${state.totalFailed ?? 0} failed`;
+        const settledLamports = BigInt(state.settledLamports || '0');
+        const usd = Number(settledLamports) / 1e6;
+        balanceStat.textContent = fmtUsd(usd);
+        balanceSub.textContent = `Wallet label: ${state.wallet ?? '—'}`;
+        sigStat.textContent = state.lastSignature ? `${state.lastSignature.slice(0, 6)}…` : '—';
+        sigSub.textContent = state.lastSignature ? 'Tap to view on Solana Explorer' : 'Awaiting tx';
+        if (state.lastSignature) {
+          sigStat.style.cursor = 'pointer';
+          sigStat.onclick = () => window.open(`https://solscan.io/tx/${state.lastSignature}`, '_blank');
+        } else {
+          sigStat.style.cursor = 'default';
+          sigStat.onclick = null;
+        }
+        chartPoints.push({ t: Date.now(), v: usd });
+        if (chartPoints.length > 120) chartPoints.shift();
+        drawChart();
+      };
+
+      const drawChart = () => {
+        chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+        if (!chartPoints.length) return;
+        const padding = 24;
+        const width = chartCanvas.width - padding * 2;
+        const height = chartCanvas.height - padding * 2;
+        const values = chartPoints.map((p) => p.v);
+        const max = Math.max(...values, 1);
+        const min = Math.min(...values, 0);
+        const range = max - min || 1;
+        chartCtx.beginPath();
+        chartCtx.strokeStyle = '#38fbd8';
+        chartCtx.lineWidth = 2.5;
+        chartPoints.forEach((point, idx) => {
+          const x = padding + (idx / Math.max(chartPoints.length - 1, 1)) * width;
+          const y = padding + (1 - (point.v - min) / range) * height;
+          if (idx === 0) chartCtx.moveTo(x, y);
+          else chartCtx.lineTo(x, y);
+        });
+        chartCtx.stroke();
+        const gradient = chartCtx.createLinearGradient(0, padding, 0, height + padding);
+        gradient.addColorStop(0, 'rgba(56, 251, 216, 0.35)');
+        gradient.addColorStop(1, 'rgba(56, 251, 216, 0)');
+        chartCtx.lineTo(padding + width, height + padding);
+        chartCtx.lineTo(padding, height + padding);
+        chartCtx.closePath();
+        chartCtx.fillStyle = gradient;
+        chartCtx.fill();
+      };
+
+      const renderOpportunities = (list) => {
+        if (!list || list.length === 0) {
+          oppsTable.innerHTML =
+            '<tr><td colspan="5" style="text-align:center; padding:28px; color: var(--muted)">No liabilities in the danger zone.</td></tr>';
+          return;
+        }
+        oppsTable.innerHTML = '';
+        list.forEach((item) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${fmtPubkey(item.obligationPubkey)}</td>
+            <td>${fmtPubkey(item.borrower || '')}</td>
+            <td><span class="tag tag-health">${(item.healthFactor || 0).toFixed(3)}</span></td>
+            <td><span class="tag tag-profit">${fmtUsd(item.estProfitUsd || 0)}</span></td>
+            <td><button class="btn-primary" data-ob="${item.obligationPubkey}">Liquidate</button></td>
+          `;
+          const btn = tr.querySelector('button');
+          btn.onclick = () => handleLiquidate(item.obligationPubkey);
+          if (!walletPubkey) btn.disabled = true;
+          oppsTable.appendChild(tr);
+        });
+      };
+
+      const fetchOpportunities = async () => {
+        try {
+          log('Fetching /api/opportunities…');
+          const res = await fetch('/api/opportunities');
+          if (!res.ok) throw new Error(`Server responded ${res.status}`);
+          const data = await res.json();
+          renderOpportunities(data);
+          log(`Received ${data.length} opportunity records`);
+        } catch (err) {
+          log('Unable to fetch opportunities:', err.message || err);
+        }
+      };
+
+      const fetchBotState = async () => {
+        try {
+          const res = await fetch('/api/bot/state');
+          if (!res.ok) throw new Error(`State endpoint ${res.status}`);
+          const state = await res.json();
+          updateStats(state);
+          log('Bot state refreshed');
+        } catch (err) {
+          log('Unable to fetch bot state:', err.message || err);
+        }
+      };
+
+      const connectPhantom = async () => {
+        if (!window.solana || !window.solana.isPhantom) {
+          window.open('https://phantom.app/', '_blank');
+          return alert('Install Phantom to continue.');
+        }
+        try {
+          provider = window.solana;
+          const resp = await provider.connect();
+          walletPubkey = resp.publicKey.toString();
+          walletStat.textContent = fmtPubkey(walletPubkey);
+          log('Connected Phantom wallet:', walletPubkey);
+          document.querySelectorAll('[data-ob]').forEach((btn) => (btn.disabled = false));
+        } catch (err) {
+          log('Phantom connection rejected', err.message || err);
+        }
+      };
+
+      const handleLiquidate = async (obligationPubkey) => {
+        if (!walletPubkey) return alert('Connect Phantom first.');
+        if (!confirm(`Liquidate obligation ${fmtPubkey(obligationPubkey)}?`)) return;
+        try {
+          log('Preparing liquidation for', obligationPubkey);
+          const res = await fetch('/api/build-liquidation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              obligationPubkey,
+              liquidatorPubkey: walletPubkey,
+            }),
+          });
+          if (!res.ok) throw new Error(`Build failed ${res.status}`);
+          const payload = await res.json();
+          if (payload.error) throw new Error(payload.error);
+          const txBytes = Uint8Array.from(atob(payload.unsignedTx), (c) => c.charCodeAt(0));
+          const tx = Transaction.from(txBytes);
+          log('Requesting Phantom signature (local)…');
+          const signedTx = await provider.signTransaction(tx);
+          const raw = signedTx.serialize();
+          const sig = await connection.sendRawTransaction(raw);
+          log('Broadcasted', sig, ' awaiting confirmation…');
+          await connection.confirmTransaction(sig, 'confirmed');
+          log('Liquidation confirmed:', sig);
+          await fetch('/api/tx-submitted', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ signature: sig, obligationPubkey }),
+          });
+          fetchBotState();
+        } catch (err) {
+          log('Liquidation error:', err.message || err);
+          alert(err.message || err);
+        }
+      };
+
+      providerBtn.onclick = connectPhantom;
+      refreshBtn.onclick = () => {
+        fetchOpportunities();
+        fetchBotState();
+      };
+      botRefreshBtn.onclick = fetchBotState;
+
+      setInterval(fetchOpportunities, 15000);
+      setInterval(fetchBotState, 20000);
+
+      fetchOpportunities();
+      fetchBotState();
+    </script>
+  </body>
+</html>
