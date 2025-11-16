@@ -9,7 +9,6 @@ import { LiquidatorEngine } from './liquidatorEngine.js';
 const {
   RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com',
   SOLEND_ENV = 'production',
-  SOLEND_LIQ_API = 'https://api.solend.fi/v1/liquidate',
   HEALTH_THRESHOLD = '0.98',
   PRIMARY_SETTLEMENT_MINT = 'EPjFWdd5AufqSSqeM2q7dJ1WsQXy8G1S3DfS6kU4etQD',
   PRIMARY_SETTLEMENT_DECIMALS = '6',
@@ -52,7 +51,6 @@ const engine = new LiquidatorEngine({
   wallet,
   stateStore,
   logger,
-  opportunitiesApi: SOLEND_LIQ_API,
   settlementMint: PRIMARY_SETTLEMENT_MINT,
   settlementDecimals: Number(PRIMARY_SETTLEMENT_DECIMALS),
   config: {

@@ -20,7 +20,6 @@ export class LiquidatorEngine {
     wallet,
     stateStore,
     logger,
-    opportunitiesApi,
     settlementMint,
     settlementDecimals = 6,
     config = {},
@@ -30,7 +29,6 @@ export class LiquidatorEngine {
     this.wallet = wallet;
     this.stateStore = stateStore;
     this.logger = logger;
-    this.opportunitiesApi = opportunitiesApi;
     this.settlementMint = new PublicKey(settlementMint);
     this.settlementDecimals = settlementDecimals;
     this.config = { ...DEFAULTS, ...config };
@@ -81,7 +79,6 @@ export class LiquidatorEngine {
 
   async runCycle() {
     const opportunities = await this.helper.fetchOpportunities({
-      apiUrl: this.opportunitiesApi,
       limit: 50,
       healthThreshold: this.config.healthThreshold,
     });

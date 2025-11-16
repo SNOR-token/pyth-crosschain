@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import BigNumber from 'bignumber.js';
 import { SolendAction, SolendMarket } from '@solendprotocol/solend-sdk';
 import {
@@ -59,15 +58,67 @@ export class SolendHelper {
     return this.marketPromise;
   }
 
-  async fetchOpportunities({ apiUrl, limit = 20, healthThreshold = 0.98 }) {
-    const resp = await fetch(`${apiUrl}?perPage=${limit}`);
-    if (!resp.ok) throw new Error(`Solend API error ${resp.status}`);
-    const payload = await resp.json();
-    const list = (payload.results || payload || [])
-      .map(normalizeOpportunity)
-      .filter((item) => item.obligationPubkey && item.healthFactor && item.healthFactor < healthThreshold)
-      .sort((a, b) => a.healthFactor - b.healthFactor || b.estProfitUsd - a.estProfitUsd);
-    return list;
+    async fetchOpportunities({ limit = 50, healthThreshold = 0.98 } = {}) {
+      const market = await this.getMarket();
+      await market.loadReserves();
+      const obligations = await market.loadObligations();
+      const reserveMap = new Map(market.reserves.map((reserve) => [reserve.address.toBase58(), reserve]));
+
+      const toKey = (value) => {
+        if (!value) return null;
+        if (typeof value === 'string') return value;
+        if (value.toBase58) return value.toBase58();
+        try {
+          return new PublicKey(value).toBase58();
+        } catch {
+          return null;
+        }
+      };
+
+      const list = (obligations || [])
+        .map((ob) => {
+          const obligationPubkey = ob.address?.toBase58?.() || ob.pubkey?.toBase58?.() || toKey(ob.pubkey);
+          const borrower = ob.info?.owner?.toBase58?.() || ob.owner?.toBase58?.() || null;
+          const healthFactor = Number(ob.info?.healthFactor ?? 0);
+          const borrows = [...(ob.info?.borrows || [])].sort(
+            (a, b) => Number(b.marketValue || 0) - Number(a.marketValue || 0),
+          );
+          const deposits = [...(ob.info?.deposits || [])].sort(
+            (a, b) => Number(b.marketValue || 0) - Number(a.marketValue || 0),
+          );
+          const primaryBorrow = borrows[0];
+          const primaryDeposit = deposits[0];
+          const repayReserveKey = toKey(primaryBorrow?.reserve);
+          const collateralReserveKey = toKey(primaryDeposit?.reserve);
+          const repayReserve = repayReserveKey ? reserveMap.get(repayReserveKey) : null;
+          const collateralReserve = collateralReserveKey ? reserveMap.get(collateralReserveKey) : null;
+          const repayMint = repayReserve?.config?.liquidityToken?.mint;
+          const collateralMint = collateralReserve?.config?.liquidityToken?.mint;
+          const estProfitUsd = Number(primaryDeposit?.marketValue || 0) - Number(primaryBorrow?.marketValue || 0);
+
+          return {
+            obligationPubkey,
+            borrower,
+            healthFactor,
+            estProfitUsd,
+            repayMint,
+            repayReserve: repayReserveKey,
+            collateralMint,
+            collateralReserve: collateralReserveKey,
+          };
+        })
+        .filter(
+          (item) =>
+            item.obligationPubkey &&
+            item.repayReserve &&
+            item.collateralReserve &&
+            item.healthFactor &&
+            item.healthFactor < healthThreshold,
+        )
+        .sort((a, b) => a.healthFactor - b.healthFactor)
+        .slice(0, limit);
+
+      return list;
   }
 
   async fetchObligation(obligationPubkey) {
